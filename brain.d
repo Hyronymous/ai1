@@ -3,12 +3,13 @@ module brain;
 import signal;
 import ops;
 
+import core.bitop;
 import std.random;
 
 final class Brain {
 private:
 	interface INode {
-		void process(Signal s);
+		INode process();
 	}
 	
 	struct NodeDefinition {
@@ -24,6 +25,9 @@ private:
 	}
 
 	INode head;
+	INode prev;
+	Signal sig;
+	
 	NodeDefinition[] nodeTypes;
 	Memory[ void* ] memories;
 	
@@ -32,7 +36,6 @@ private:
 	uint reg3;
 	
 	ubyte flags;
-	uint counter;
 	
 	final class ProcessNode : INode {
 	private:
@@ -41,10 +44,16 @@ private:
 	public:
 		INode next = null;
 		
-		void process(Signal sig) {
+		INode process() {
 			for (size_t pos = 0; pos < ops.length; pos++) switch (ops[pos]) {
 			case BrainOp.MORPH:
-				
+			/*
+				foreach (def; nodeTypes) {
+					if () {
+						
+					}
+				}
+			*/
 			break;
 			case BrainOp.MORPH_X:
 				
@@ -71,14 +80,8 @@ private:
 			case BrainOp.RANDB_1:
 				reg1 = uniform!ubyte;
 			break;
-			case BrainOp.RANDB_2:
-				reg2 = uniform!ubyte;
-			break;
 			case BrainOp.RANDI_1:
 				reg1 = uniform!uint;
-			break;
-			case BrainOp.RANDI_2:
-				reg2 = uniform!uint;
 			break;
 			
 			case BrainOp.STOREB:
@@ -191,8 +194,39 @@ private:
 				if (comp == 0 || comp == Flag.EQUAL) pos += reg3;
 			break;
 			
-			case BrainOp.ESCAPE:
-				// TODO
+			case BrainOp.MOVEB_L:
+				sig.leftByte;
+			break;
+			case BrainOp.MOVEB_R:
+				sig.rightByte;
+			break;
+			case BrainOp.MOVEI_L:
+				sig.leftInt;
+			break;
+			case BrainOp.MOVEI_R:
+				sig.rightInt;
+			break;
+			
+			case BrainOp.ESCAPE:	// Scan for the next ForNode and exit the loop
+				INode test = next;
+				while (test !is null) {
+					if (auto node = cast(ProcessNode)test) {
+						test = node.next;
+					}
+					else if (auto node = cast(ForNode)test) {
+						if (node.set) {	// This is a loop that we're in
+							node.set = false;	// Clean up
+							return node.exunt;
+						}
+						else {	// This is a loop that we're outside of. Bypass
+							test = node.exunt;
+						}
+					}
+					else {	// IfNode
+						IfNode node = cast(IfNode)test;
+						test = node.left;	// No way to guess which path will be shorter, but eventually the two paths will merge again
+					}
+				}
 			break;
 			case BrainOp.REMEMBER:
 				Memory* mem = (&this in memories);
@@ -209,28 +243,66 @@ private:
 			break;
 			
 			default:
-				reg3 = ops[pos] - BrainOp.CONST_0;
+				reg3 = opConsts[ ops[pos] - BrainOp.CONST_0 ];
 			break;
 			}
 			
-			if (next !is null) next.process(sig);
+			return next;
 		}
 	}
 
 
 	final class IfNode : INode {
 	public:
-		void process(Signal st) {}
+		INode left;
+		INode right;
+		
+		INode process() {
+			if (popcnt(reg3) < 16) {
+				return left;
+			}
+			else {
+				return right;
+			}
+		}
 	}
 
 	final class ForNode : INode {
 	public:
-		void process(Signal st) {}
-	}
+		INode exunt;
+		INode loop;
 
+		bool set = false;
+		uint counter;
+		
+		INode process() {
+			if (!set) {
+				set = true;
+				counter = reg3;
+			}
+			
+			if (counter == 0) {
+				set = false;
+				return exunt;
+			}
+			else {
+				counter--;
+				return loop;
+			}
+		}
+	}
 	
 public:
-	void doStuff() {
+	void process(Signal sig) {
+		INode curr = head;
 		
+		prev = null;
+		this.sig = sig;
+		
+		while (curr !is null) {
+			INode next = curr.process();
+			prev = curr;
+			curr = next;
+		}
 	}
 }
