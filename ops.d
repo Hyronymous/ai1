@@ -8,11 +8,8 @@ enum BrainOp : ubyte {
 	CREATE_NODE_AFTER,
 	CREATE_IF_BEFORE,
 	CREATE_IF_AFTER,
-	CREATE_LOOP_BEFORE,
-	CREATE_LOOP_AFTER,
-	
-	RANDB_1,
-	RANDI_1,
+	CREATE_FOR_BEFORE,
+	CREATE_FOR_AFTER,
 	
 	STOREB,
 	LOADB_1,
@@ -25,6 +22,23 @@ enum BrainOp : ubyte {
 	PUSHB,
 	POPB_1,
 	POPB_2,
+	
+	MOVEB_L,
+	MOVEB_R,
+	MOVEI_L,
+	MOVEI_R,
+	
+	TEST,
+	
+	JUMP_EQ,
+	JUMP_NE,
+	JUMP_Z,
+	JUMP_NZ,
+	
+	JUMP_LT,
+	JUMP_GT,
+	JUMP_LTE,
+	JUMP_GTE,
 	
 	ADD,
 	SUB,
@@ -42,24 +56,6 @@ enum BrainOp : ubyte {
 	SHIFTR_2,
 	
 	MOD,
-	POW,
-	
-	TEST,
-	
-	JUMP_EQ,
-	JUMP_NE,
-	JUMP_Z,
-	JUMP_NZ,
-	
-	JUMP_LT,
-	JUMP_GT,
-	JUMP_LTE,
-	JUMP_GTE,
-	
-	MOVEB_L,
-	MOVEB_R,
-	MOVEI_L,
-	MOVEI_R,
 	
 	ESCAPE,
 	REMEMBER,
@@ -271,7 +267,12 @@ enum BrainOp : ubyte {
 	CONST_21474180,
 	CONST_30045015,
 	CONST_30421755,
-	CONST_34597290
+	CONST_34597290,
+	
+	POW,
+	
+	RANDB_1,
+	RANDI_1
 }
 
 __gshared const(const(uint)[]) opConsts = [
